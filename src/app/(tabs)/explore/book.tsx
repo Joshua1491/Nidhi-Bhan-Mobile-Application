@@ -83,8 +83,23 @@ export default function Book() {
               ) : null}
               <Serif size={22} style={{ marginTop: 6 }}>{s.name}</Serif>
               {s.description ? <Sub>{s.description}</Sub> : null}
-              <View style={{ marginTop: 14 }}>
-                <Btn label="Book on WhatsApp" color={colors.deepPlum} onPress={() => bookOnWhatsApp(s.name)} />
+              <View style={{ marginTop: 14, gap: 8 }}>
+                {/* An online service with a duration can be booked right
+                    here, against her real availability — the same slots
+                    the website offers. Everything else books by hand. */}
+                {s.virtual && s.duration_min ? (
+                  <Btn
+                    label="Choose a time"
+                    color={colors.deepPlum}
+                    onPress={() => router.push({ pathname: "/explore/slots", params: { service: s.slug } } as never)}
+                  />
+                ) : null}
+                <Btn
+                  label="Book on WhatsApp"
+                  kind={s.virtual && s.duration_min ? "ghost" : undefined}
+                  color={s.virtual && s.duration_min ? undefined : colors.deepPlum}
+                  onPress={() => bookOnWhatsApp(s.name)}
+                />
               </View>
             </Card>
           );
