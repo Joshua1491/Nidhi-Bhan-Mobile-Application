@@ -9,10 +9,12 @@ import { colors, fonts } from "../../../theme";
 const TOOLS = [
   { href: "/explore/chart", flag: null, title: "Your Full Chart", sub: "All nine grahas — signs, houses, nakshatras and dignities from your canonical chart.", accent: "#C4A0B9", tint: "rgba(196,160,185,0.12)" },
   { href: "/explore/book", flag: null, title: "Book a Session", sub: "Work with Dr. Nidhi directly — astrology, hypnotherapy, regression and more.", accent: "#B8935A", tint: "rgba(184,147,90,0.12)" },
+  { href: "/explore/sessions", flag: null, title: "Your Sessions", sub: "What's booked, how to join, and what has already been held.", accent: "#C5A66B", tint: "rgba(197,166,107,0.10)" },
+  { href: "/explore/messages", flag: null, title: "Messages", sub: "Write to Dr. Nidhi between sessions — it stays with your record.", accent: "#C4A0B9", tint: "rgba(196,160,185,0.12)" },
   { href: "/explore/insights", flag: null, title: "Your Insights", sub: "Mood trends and practice streaks from your own last 30 days.", accent: "#7E9B82", tint: "rgba(157,180,160,0.14)" },
   { href: "/explore/muhurta", flag: "muhurta_enabled", title: "Auspicious Dates", sub: "Find the right day to marry, launch, travel or sign — chosen for your chart.", accent: "#C5A66B", tint: "rgba(197,166,107,0.10)" },
   { href: "/explore/compatibility", flag: "compatibility_enabled", title: "Compatibility", sub: "Guna Milan — match two birth charts across the eight classical kootas.", accent: "#D4A0A0", tint: "rgba(212,160,160,0.12)" },
-  { href: "/explore/remedies", flag: null, title: "Remedies", sub: "Mantras, rituals and daan tuned to your chart — added to a plan and tracked.", accent: "#7E8AA0", tint: "rgba(126,138,160,0.12)" },
+  { href: "/explore/remedies", flag: null, title: "Remedies", sub: "What Dr. Nidhi has prescribed for your chart — tracked day by day.", accent: "#7E8AA0", tint: "rgba(126,138,160,0.12)" },
   { href: "/explore/journal", flag: null, title: "Reflections", sub: "A private journal with a daily prompt — notice the patterns underneath.", accent: "#C4A0B9", tint: "rgba(196,160,185,0.12)" },
   { href: "/explore/festivals", flag: "festivals_enabled", title: "Festival & Fasting Calendar", sub: "What's coming up, what it means, and how to observe it — wherever you are.", accent: "#9DB4A0", tint: "rgba(157,180,160,0.14)" },
   { href: "/explore/notes", flag: null, title: "Dr. Nidhi's Notes", sub: "Personal notes and next steps from your sessions, kept close.", accent: "#B8935A", tint: "rgba(184,147,90,0.10)" },
