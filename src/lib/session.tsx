@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
+import { registerForPush, wireNotificationTaps } from "./notifications";
 
 interface SessionState {
   session: Session | null;
@@ -30,13 +31,17 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       setSession(data.session);
       await loadOnboarded(data.session);
       setLoading(false);
+      if (data.session) registerForPush(data.session.user.id);
     });
     const { data: sub } = supabase.auth.onAuthStateChange(async (_e, s) => {
       setSession(s);
       await loadOnboarded(s);
       setLoading(false);
+      if (s) registerForPush(s.user.id);
     });
-    return () => sub.subscription.unsubscribe();
+    // Tapping a notification routes to the screen the server named.
+    const unwire = wireNotificationTaps();
+    return () => { sub.subscription.unsubscribe(); unwire(); };
   }, []);
 
   return (
