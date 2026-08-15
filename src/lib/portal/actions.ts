@@ -48,12 +48,11 @@ export async function completeJourneyDay(userId: string, slug: string, totalDays
   }).eq("user_id", userId).eq("journey_slug", slug);
 }
 
-export async function addRemedy(userId: string, slug: string) {
-  await supabase.from("remedy_progress").upsert(
-    { user_id: userId, remedy_slug: slug, status: "active" },
-    { onConflict: "user_id,remedy_slug", ignoreDuplicates: true }
-  );
-}
+// addRemedy is gone, deliberately — remedies are prescribed by
+// Dr. Nidhi or drawn from the chart, never self-added. The portal
+// removed its version of this at the same time (a client could put
+// themselves on a Saturn fast because the card looked appealing, and
+// she would never know).
 
 export async function completeRemedyToday(userId: string, slug: string) {
   const { data: row } = await supabase
@@ -62,14 +61,27 @@ export async function completeRemedyToday(userId: string, slug: string) {
   const today = todayStr();
   if (row?.last_done_date === today) return;
   const newStreak = row?.last_done_date === yesterdayStr() ? (row.streak ?? 0) + 1 : 1;
-  await supabase.from("remedy_progress").update({
-    streak: newStreak, total_done: (row?.total_done ?? 0) + 1, last_done_date: today,
-  }).eq("user_id", userId).eq("remedy_slug", slug);
+  // UPSERT, not UPDATE: a prescribed remedy has no progress row until
+  // the first day it is done — an update would match nothing, return
+  // no error, and the tick would silently fail on exactly the
+  // remedies Dr. Nidhi cares most about. (The portal fixed the same
+  // bug in its own version of this function.)
+  await supabase.from("remedy_progress").upsert(
+    {
+      user_id: userId, remedy_slug: slug, status: "active",
+      streak: newStreak, total_done: (row?.total_done ?? 0) + 1, last_done_date: today,
+    },
+    { onConflict: "user_id,remedy_slug" }
+  );
 }
 
-export async function removeRemedy(userId: string, slug: string) {
-  await supabase.from("remedy_progress").delete()
-    .eq("user_id", userId).eq("remedy_slug", slug);
+export async function removeRemedy(_userId: string, slug: string) {
+  // The database refuses to touch anything prescribed or chart-drawn —
+  // only practices the client added themselves, before prescriptions
+  // existed, can be let go of. A client quietly deleting a
+  // prescription would leave Dr. Nidhi believing they are doing
+  // something they are not.
+  await supabase.rpc("dismiss_own_remedy", { p_slug: slug });
 }
 
 export async function addJournalEntry(userId: string, content: string, prompt: string | null) {

@@ -53,6 +53,31 @@ export interface RemedyProgress {
   status: string;
 }
 
+/** One row of public.my_remedies() — what has been prescribed, by whom. */
+export interface PrescribedRemedy {
+  remedy_slug: string;
+  source: "practitioner" | "ai" | "self";
+  reason: string | null;
+  prescribed_at: string;
+  streak: number;
+  total_done: number;
+  last_done_date: string | null;
+}
+
+/** One row of public.service_catalogue() — the live services list. */
+export interface CatalogueService {
+  slug: string;
+  name: string;
+  description: string | null;
+  price_cents: number | null;
+  currency: string | null;
+  duration_min: number | null;
+  sessions: number | null;
+  virtual: boolean;
+  purchasable: boolean;
+  sort_order: number;
+}
+
 export interface JournalEntry {
   id: string;
   entry_date: string;
