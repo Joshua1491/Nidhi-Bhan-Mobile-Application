@@ -25,6 +25,16 @@ function timeLabel(startMs: number): string {
   });
 }
 
+/** "GMT+5:30" / "EDT" — whatever the device calls its own zone. */
+function deviceTzLabel(): string {
+  try {
+    const parts = new Intl.DateTimeFormat(undefined, { timeZoneName: "short" }).formatToParts(new Date());
+    return parts.find((p) => p.type === "timeZoneName")?.value ?? "";
+  } catch {
+    return "";
+  }
+}
+
 export default function Slots() {
   const { service } = useLocalSearchParams<{ service?: string }>();
   const serviceSlug = service || "birth-chart-diagnosis";
@@ -69,7 +79,7 @@ export default function Slots() {
         <Eyebrow>{data?.service.name ?? "Book a session"}</Eyebrow>
         <Title>Choose{"\n"}your time</Title>
         <Sub>
-          Times are shown in your timezone
+          Times are shown in your timezone{deviceTzLabel() ? ` (${deviceTzLabel()})` : ""}
           {data?.service.durationMin ? ` · ${data.service.durationMin} minutes` : ""}.
         </Sub>
       </View>

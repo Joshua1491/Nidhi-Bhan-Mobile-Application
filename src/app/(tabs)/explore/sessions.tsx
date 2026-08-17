@@ -21,9 +21,13 @@ interface Appointment {
 }
 
 function fmt(iso: string) {
+  // Labeled with the device's timezone, mirroring the portal's rule
+  // (Aug 2026): a client always sees THEIR OWN clock, and the label
+  // makes that a fact rather than an assumption.
   return new Date(iso).toLocaleString(undefined, {
     weekday: "short", month: "short", day: "numeric",
     hour: "numeric", minute: "2-digit",
+    timeZoneName: "short",
   });
 }
 
