@@ -8,9 +8,11 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, Text, TextInput, View } from "react-native";
 import { Btn, Card, Chip, Eyebrow, Loading, Screen, Serif, Sub, Title } from "../../../components/ui";
 import { bookAppointment, bookableSlots } from "../../../lib/api";
+import { useSession } from "../../../lib/session";
+import { supabase } from "../../../lib/supabase";
 import { colors, fonts } from "../../../theme";
 
 function dayLabel(date: string): string {
@@ -38,10 +40,13 @@ function deviceTzLabel(): string {
 export default function Slots() {
   const { service } = useLocalSearchParams<{ service?: string }>();
   const serviceSlug = service || "birth-chart-diagnosis";
+  const { session } = useSession();
+  const userId = session!.user.id;
 
   const [dayIdx, setDayIdx] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const [outcome, setOutcome] = useState<string | null>(null);
+  const [phone, setPhone] = useState("");
 
   const slots = useQuery({
     queryKey: ["slots", serviceSlug],
@@ -49,17 +54,34 @@ export default function Slots() {
     staleTime: 60_000,
   });
 
+  // Dr. Bhan's rule: every client reachable. If no number is on file,
+  // the confirm card asks for one with the first booking.
+  const clientPhone = useQuery({
+    queryKey: ["clientPhone", userId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("clients").select("phone").eq("user_id", userId).maybeSingle();
+      return (data?.phone as string | null) ?? null;
+    },
+  });
+  const needsPhone = clientPhone.isSuccess && !(clientPhone.data ?? "").trim();
+  const phoneOk = phone.replace(/\D/g, "").length >= 7;
+
   const book = useMutation({
-    mutationFn: (startMs: number) => bookAppointment(slots.data!.service.id, startMs),
+    mutationFn: (startMs: number) =>
+      bookAppointment(slots.data!.service.id, startMs, needsPhone ? phone.trim() : undefined),
     onSuccess: (result) => {
       if (result.ok) {
         router.replace("/explore/sessions");
       } else {
-        // "Someone just took that time" — refresh the truth and let
-        // them pick again.
+        // "Someone just took that time" (or the server wants a phone
+        // number) — surface the sentence and let them fix it.
         setOutcome(result.message);
-        setPicked(null);
-        slots.refetch();
+        if (!result.needPhone) {
+          setPicked(null);
+          slots.refetch();
+        }
+        if (result.needPhone) clientPhone.refetch();
       }
     },
   });
@@ -133,11 +155,41 @@ export default function Slots() {
                 {dayLabel(day.date)} · {timeLabel(picked)}
               </Serif>
               <Sub>{data.service.name} · {data.service.durationMin} minutes with Dr. Nidhi.</Sub>
+              {needsPhone ? (
+                <View style={{ marginTop: 12 }}>
+                  <Text style={{ fontFamily: fonts.sansMedium, fontSize: 11, letterSpacing: 1, textTransform: "uppercase", color: colors.textMuted, marginBottom: 6 }}>
+                    WhatsApp number (with country code)
+                  </Text>
+                  <TextInput
+                    value={phone}
+                    onChangeText={setPhone}
+                    placeholder="e.g. +1 416 555 0123"
+                    placeholderTextColor={colors.textMuted}
+                    keyboardType="phone-pad"
+                    style={{
+                      borderWidth: 1, borderColor: colors.cardBorder, borderRadius: 12,
+                      paddingHorizontal: 14, paddingVertical: 12,
+                      fontFamily: fonts.sans, fontSize: 15, color: colors.charcoal,
+                      backgroundColor: "#fff",
+                    }}
+                  />
+                  <Text style={{ fontFamily: fonts.sans, fontSize: 12, color: colors.textSecondary, marginTop: 6 }}>
+                    Dr. Nidhi&apos;s team confirms every session on WhatsApp.
+                  </Text>
+                </View>
+              ) : null}
               <View style={{ marginTop: 12 }}>
                 <Btn
                   label={book.isPending ? "Booking…" : "Book this time"}
                   color={colors.deepPlum}
-                  onPress={() => !book.isPending && book.mutate(picked)}
+                  onPress={() => {
+                    if (book.isPending) return;
+                    if (needsPhone && !phoneOk) {
+                      setOutcome("Please add your WhatsApp number above to book.");
+                      return;
+                    }
+                    book.mutate(picked);
+                  }}
                 />
               </View>
             </Card>

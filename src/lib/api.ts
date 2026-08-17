@@ -74,14 +74,22 @@ export interface BookResult {
   ok: boolean;
   message: string;
   appointmentId?: string;
+  /** Server refused because no phone is on file — collect one and retry. */
+  needPhone?: boolean;
 }
 
 /**
  * Book a slot. Unlike `post`, a non-OK answer here still carries the
  * sentence the person needs to read ("Someone just took that time"),
  * so this one keeps the body instead of collapsing it to null.
+ * `phone` rides along on the first booking of clients who have no
+ * number on file — Dr. Bhan's every-client-reachable rule.
  */
-export async function bookAppointment(serviceId: string, startMs: number): Promise<BookResult> {
+export async function bookAppointment(
+  serviceId: string,
+  startMs: number,
+  phone?: string
+): Promise<BookResult> {
   try {
     const { data } = await supabase.auth.getSession();
     const token = data.session?.access_token;
@@ -89,7 +97,11 @@ export async function bookAppointment(serviceId: string, startMs: number): Promi
     const res = await fetch(`${SITE_URL}/api/app/book`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ service_id: serviceId, start: new Date(startMs).toISOString() }),
+      body: JSON.stringify({
+        service_id: serviceId,
+        start: new Date(startMs).toISOString(),
+        ...(phone ? { phone } : {}),
+      }),
     });
     const body = (await res.json().catch(() => null)) as BookResult | null;
     return body ?? { ok: false, message: "We couldn't reach the booking service. Please try again." };
